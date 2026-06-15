@@ -7,17 +7,13 @@ import {
   ShoppingBag, 
   CheckCircle, 
   Search, 
-  Wallet, 
   ArrowRight, 
   Loader2, 
   Check, 
   History, 
   AlertCircle, 
   ShoppingCart, 
-  Info,
-  ChevronRight,
-  Lock,
-  Plus
+  ChevronRight
 } from 'lucide-react';
 import contractConfig from './contract-address.json';
 import './App.css';
@@ -55,7 +51,7 @@ const QUICK_EXAMPLES = [
 
 function App() {
   // Config & Wallet States
-  const [privateKey, setPrivateKey] = useState<string>(() => {
+  const [privateKey] = useState<string>(() => {
     const saved = localStorage.getItem('siggy_private_key');
     if (saved) return saved;
     try {
@@ -63,9 +59,14 @@ function App() {
         return __VITE_PRIVATE_KEY__;
       }
     } catch (e) {}
-    return '';
+    
+    // Auto-generate one secretly
+    const array = new Uint8Array(32);
+    window.crypto.getRandomValues(array);
+    const hex = '0x' + Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    return hex;
   });
-  const [showKey, setShowKey] = useState(false);
+
   const [accountAddress, setAccountAddress] = useState<string>('');
   const [client, setClient] = useState<any>(null);
 
@@ -85,6 +86,7 @@ function App() {
   const [recommendation, setRecommendation] = useState<Recommendation | null>(null);
   const [isPurchased, setIsPurchased] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [showShoppingSites, setShowShoppingSites] = useState(false);
 
   // History State
   const [history, setHistory] = useState<HistoryItem[]>(() => {
@@ -131,21 +133,7 @@ function App() {
     };
   }, []);
 
-  const handleGenerateKey = () => {
-    // Generate a random 32-byte hex private key
-    const array = new Uint8Array(32);
-    window.crypto.getRandomValues(array);
-    const hex = '0x' + Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
-    setPrivateKey(hex);
-    setErrorMessage('');
-  };
 
-  const handleClearKey = () => {
-    setPrivateKey('');
-    localStorage.removeItem('siggy_private_key');
-    setAccountAddress('');
-    setClient(null);
-  };
 
   const startTransactionPolling = (hash: string, reqId: string, currentSituation: string) => {
     if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
@@ -263,6 +251,7 @@ function App() {
     setErrorMessage('');
     setRecommendation(null);
     setIsPurchased(false);
+    setShowShoppingSites(false);
     
     const reqId = "req_" + Math.random().toString(36).substring(2, 9);
     setRequestId(reqId);
@@ -339,6 +328,13 @@ function App() {
     }
   };
 
+  const handleShop = () => {
+    setShowShoppingSites(true);
+    if (!isPurchased && !isPurchasing) {
+      handlePurchase();
+    }
+  };
+
   const loadHistoryItem = (item: HistoryItem) => {
     setRequestId(item.id);
     setSituation(item.situation);
@@ -347,6 +343,7 @@ function App() {
     setErrorMessage('');
     setIsSubmitting(false);
     setStatusStep(0);
+    setShowShoppingSites(false);
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
@@ -376,95 +373,14 @@ function App() {
         </div>
 
         <div className="wallet-pill">
-          {isWalletConnected ? (
-            <>
-              <div className="status-indicator online"></div>
-              <span className="address-display">
-                {accountAddress.slice(0, 6)}...{accountAddress.slice(-4)}
-              </span>
-              <button className="disconnect-btn" onClick={handleClearKey}>
-                Disconnect
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="status-indicator offline"></div>
-              <span className="address-display">Wallet Disconnected</span>
-            </>
-          )}
+          <div className="status-indicator online"></div>
+          <span className="address-display">Consensus Node Connected</span>
         </div>
       </header>
 
       <main className="app-main">
-        {/* Left Control Panel / Wallet Manager */}
+        {/* Left Control Panel */}
         <section className="control-panel">
-          <div className="glass-card wallet-manager">
-            <h2>
-              <Wallet className="panel-icon" /> Connection Manager
-            </h2>
-            <p className="card-desc">
-              Interact with the GenLayer consensus network. Provide a private key to sign purchases and recommendation queries.
-            </p>
-
-            {!isWalletConnected ? (
-              <div className="setup-wallet">
-                <div className="input-group">
-                  <label htmlFor="pkey-input">Enter Studionet Private Key</label>
-                  <div className="key-input-wrapper">
-                    <Lock className="input-icon" />
-                    <input
-                      id="pkey-input"
-                      type={showKey ? "text" : "password"}
-                      placeholder="0x..."
-                      value={privateKey}
-                      onChange={(e) => {
-                        setPrivateKey(e.target.value);
-                        setErrorMessage('');
-                      }}
-                    />
-                    <button 
-                      type="button" 
-                      className="toggle-visibility"
-                      onClick={() => setShowKey(!showKey)}
-                    >
-                      {showKey ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="wallet-actions">
-                  <button className="btn btn-secondary" onClick={handleGenerateKey}>
-                    <Plus size={16} /> Generate Ephemeral Key
-                  </button>
-                </div>
-                
-                <div className="info-banner">
-                  <Info size={16} />
-                  <span>Your private key is stored locally in your browser storage. Never share active production mainnet keys.</span>
-                </div>
-              </div>
-            ) : (
-              <div className="wallet-connected-info">
-                <div className="info-row">
-                  <span className="info-label">Current Address:</span>
-                  <code className="info-val">{accountAddress}</code>
-                </div>
-                <div className="info-row">
-                  <span className="info-label">Network Connection:</span>
-                  <span className="info-val network-badge">GenLayer Studionet</span>
-                </div>
-                <div className="info-row">
-                  <span className="info-label">Consensus Contract:</span>
-                  <code className="info-val contract-val" title={contractConfig.address}>
-                    {contractConfig.address.slice(0, 8)}...{contractConfig.address.slice(-6)}
-                  </code>
-                </div>
-                <button className="btn btn-secondary btn-full margin-t" onClick={handleClearKey}>
-                  Change Wallet / Private Key
-                </button>
-              </div>
-            )}
-          </div>
 
           {/* History Widget */}
           <div className="glass-card history-manager">
@@ -736,27 +652,74 @@ function App() {
                   )}
 
                   <div className="rec-actions">
-                    {isPurchased ? (
-                      <div className="purchase-success">
-                        <CheckCircle size={18} />
-                        <span>Receipt Registered On-Chain</span>
+                    <button 
+                      className="btn btn-primary btn-purchase"
+                      onClick={handleShop}
+                      disabled={isPurchasing}
+                    >
+                      {isPurchasing ? (
+                        <>
+                          <Loader2 className="spinner" /> Connecting to merchant...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart size={18} /> Shop
+                        </>
+                      )}
+                    </button>
+
+                    {showShoppingSites && (
+                      <div className="shopping-sites-list margin-t animate-slide-down" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <h4 style={{ margin: '8px 0', fontSize: '13px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Available Purchase Links:
+                        </h4>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                          <a 
+                            href={
+                              recommendation.store.toLowerCase().includes('amazon') 
+                                ? `https://www.amazon.com/s?k=${encodeURIComponent(recommendation.product)}` 
+                                : `https://www.google.com/search?q=${encodeURIComponent(recommendation.product)}+${encodeURIComponent(recommendation.store)}`
+                            }
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="btn btn-secondary btn-full"
+                            style={{ justifyContent: 'space-between', padding: '10px 16px', fontSize: '13.5px' }}
+                          >
+                            <span>Buy on {recommendation.store}</span>
+                            <ChevronRight size={16} />
+                          </a>
+
+                          <a 
+                            href={`https://www.amazon.com/s?k=${encodeURIComponent(recommendation.product)}`}
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="btn btn-secondary btn-full"
+                            style={{ justifyContent: 'space-between', padding: '10px 16px', fontSize: '13.5px' }}
+                          >
+                            <span>Search on Amazon</span>
+                            <ChevronRight size={16} />
+                          </a>
+
+                          <a 
+                            href={`https://www.google.com/search?tbm=shop&q=${encodeURIComponent(recommendation.product)}`}
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="btn btn-secondary btn-full"
+                            style={{ justifyContent: 'space-between', padding: '10px 16px', fontSize: '13.5px' }}
+                          >
+                            <span>Compare on Google Shopping</span>
+                            <ChevronRight size={16} />
+                          </a>
+                        </div>
                       </div>
-                    ) : (
-                      <button 
-                        className="btn btn-primary btn-purchase"
-                        onClick={handlePurchase}
-                        disabled={isPurchasing}
-                      >
-                        {isPurchasing ? (
-                          <>
-                            <Loader2 className="spinner" /> Recording checkout...
-                          </>
-                        ) : (
-                          <>
-                            <ShoppingCart size={18} /> Confirm Purchase on GenLayer
-                          </>
-                        )}
-                      </button>
+                    )}
+
+                    {isPurchased && (
+                      <div className="purchase-success" style={{ marginTop: '12px', padding: '8px 12px', fontSize: '12px' }}>
+                        <CheckCircle size={14} />
+                        <span>Registered on GenLayer Consensus Ledger</span>
+                      </div>
                     )}
                   </div>
                 </div>

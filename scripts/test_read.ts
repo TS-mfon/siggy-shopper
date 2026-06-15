@@ -34,7 +34,7 @@ async function main() {
   try {
     const tx = await client.request({
       method: "eth_getTransactionByHash",
-      params: ["0xf07ea803f6653aaeaa12bd440afa573c52c0596c6723c86d529f9402f5562169"],
+      params: ["0xb965ec941fc20ae6a2794b9e60e9c64587d90b6c734e568730a85a597bfe8ad7"],
     });
     console.log("Transaction Execution Details:", JSON.stringify(tx, null, 2));
   } catch (err) {

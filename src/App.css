@@ -519,6 +519,7 @@ code.info-val {
   display: flex;
   flex-direction: column;
   gap: 32px;
+  min-width: 0;
 }
 
 .search-card {
@@ -572,6 +573,7 @@ code.info-val {
   align-items: center;
   gap: 10px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .label-title {
@@ -585,15 +587,20 @@ code.info-val {
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: 8px;
 }
 
 .label-items::-webkit-scrollbar {
-  height: 2px;
+  height: 4px;
 }
 
 .label-items::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+}
+
+.label-items::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
 }
 
 .quick-label-btn {
@@ -717,7 +724,8 @@ code.info-val {
   font-weight: 500;
   color: var(--text-secondary);
   text-align: center;
-  white-space: nowrap;
+  white-space: normal;
+  max-width: 100px;
 }
 
 .step-connector {
@@ -1074,5 +1082,52 @@ code.info-val {
   50% {
     transform: translateY(-4px) scale(1.1);
     opacity: 1;
+  }
+}
+
+/* Mobile Responsiveness Overrides */
+@media (max-width: 600px) {
+  .app-container {
+    padding: 0 12px 24px;
+  }
+  .glass-card {
+    padding: 16px;
+  }
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px 0;
+  }
+  .wallet-pill {
+    align-self: flex-start;
+  }
+  .search-form textarea {
+    padding: 12px;
+    font-size: 14px;
+  }
+  .btn {
+    padding: 10px 20px;
+  }
+  .stepper-visual {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 0 16px;
+  }
+  .step-node {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    gap: 16px;
+    height: auto;
+  }
+  .node-label {
+    text-align: left;
+    font-size: 12px;
+    max-width: none;
+  }
+  .step-connector {
+    display: none;
   }
 }
